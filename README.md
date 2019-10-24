@@ -1,5 +1,5 @@
 # University of Arizona Transformer for Common Workflow Language
-This repo contains source for building base docker images for the University of Arizona (UA) environment that uses Common Workflow Language (CWL).
+This repo contains source for building base docker images for the University of Arizona (UA) environment that uses Common Workflow Language (CWL) for processing Gantry data.
 
 The images built here are from the AgPipeline image(s) created by the [base docker support](https://github.com/AgPipeline/base-docker-support) repo.
 
