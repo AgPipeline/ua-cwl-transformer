@@ -71,6 +71,9 @@ class Transformer():
         parser.add_argument('--logging', '-l', nargs='?', default=os.getenv("LOGGING"),
                             help='file or url or logging configuration (default=None)')
 
+        parser.epilog = configuration.TRANSFORMER_NAME + ' version ' + configuration.TRANSFORMER_VERSION + \
+                        ' author ' + configuration.AUTHOR_NAME + ' ' + configuration.AUTHOR_EMAIL
+
     #pylint: disable=no-self-use
     def get_transformer_params(self, args: argparse.Namespace, metadata: dict) -> dict:
         """Returns a parameter list for processing data

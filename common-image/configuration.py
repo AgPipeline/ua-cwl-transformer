@@ -15,3 +15,9 @@ TRANSFORMER_SENSOR = ''
 
 # The transformer type (eg: 'rgbmask', 'plotclipper')
 TRANSFORMER_TYPE = ''
+
+# The name of the author of the extractor
+AUTHOR_NAME = ''
+
+# The email of the author of the extractor
+AUTHOR_EMAIL = ''
