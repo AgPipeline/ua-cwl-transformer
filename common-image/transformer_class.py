@@ -1,7 +1,15 @@
 """Class instance for Transformer
 """
 
+import os
 import argparse
+
+from pyclowder.utils import setup_logging as pyc_setup_logging
+from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadata, \
+                                get_season_and_experiment as tr_get_season_and_experiment, \
+                                get_extractor_metadata as tr_get_extractor_metadata
+from terrautils.sensors import Sensors
+
 import configuration
 
 class __internal__():
@@ -10,6 +18,26 @@ class __internal__():
     def __init__(self):
         """Perform class level initialization
         """
+
+    @staticmethod
+    def get_metadata_timestamp(metadata: dict) -> str:
+        """Looks up the timestamp in the metadata
+        Arguments:
+            metadata: the metadata to find the timestamp in
+        """
+        if 'content' in metadata:
+            check_md = metadata['content']
+        else:
+            check_md = metadata
+
+        timestamp = None
+        if 'timestamp' in check_md:
+            timestamp = check_md['timestamp']
+        elif 'gantry_variable_metadata' in check_md:
+            if 'datetime' in check_md['gantry_variable_metadata']:
+                timestamp = check_md['gantry_variable_metadata']['datetime']
+
+        return timestamp
 
 class Transformer():
     """Generic class for supporting transformers
@@ -32,15 +60,16 @@ class Transformer():
     def sensor_name(self):
         """Returns the name of the sensor we represent
         """
-        return configuration.SENSOR_NAME
+        return configuration.TRANSFORMER_SENSOR
 
+    # pylint: disable=no-self-use
     def add_parameters(self, parser: argparse.ArgumentParser) -> None:
         """Adds processing parameters to existing parameters
         Arguments:
             parser: instance of argparse
         """
         parser.add_argument('--logging', '-l', nargs='?', default=os.getenv("LOGGING"),
-                        help='file or url or logging configuration (default=None)')
+                            help='file or url or logging configuration (default=None)')
 
     #pylint: disable=no-self-use
     def get_transformer_params(self, args: argparse.Namespace, metadata: dict) -> dict:
@@ -50,7 +79,7 @@ class Transformer():
             metadata: the loaded metadata
         """
         # Setup logging
-        setup_logging(args.logging)
+        pyc_setup_logging(args.logging)
 
         # Determine if we're using JSONLD (which we should be)
         if 'content' in metadata:
@@ -58,36 +87,50 @@ class Transformer():
         else:
             parse_md = metadata
 
-        terraref_md = get_terraref_metadata(parse_md, configuration.TRANSFORMER_TYPE)
+        terraref_md = tr_get_terraref_metadata(parse_md, configuration.TRANSFORMER_TYPE)
         if not terraref_md:
-            return {'code': -5001, 'error': "Unable to load Gantry information from metadata for '%s'" % configuration.TRANSFORMER_TYPE}
+            return {'code': -5001, 'error': "Unable to load Gantry information from metadata for '%s'" % \
+                                                                                    configuration.TRANSFORMER_TYPE}
 
         timestamp = __internal__.get_metadata_timestamp(terraref_md)
         if not timestamp:
-            return {'code': -5002, 'error': "Unable to locate timestamp in metadata for '%s'" % configuration.TRANSFORMER_TYPE}
+            return {'code': -5002, 'error': "Unable to locate timestamp in metadata for '%s'" % \
+                                                                                    configuration.TRANSFORMER_TYPE}
 
         # Fetch experiment name from terra metadata
-        _, _, updated_experiment = do_get_season_and_experiment(timestamp, configuration.TRANSFORMER_TYPE, terraref_md)
+        season_name, experiment_name, updated_experiment = \
+                                    tr_get_season_and_experiment(timestamp, configuration.TRANSFORMER_TYPE, terraref_md)
 
         # Setup our sensor
-        self.sensor = Sensor(base='', station='ua-mac', sensor=configuration.TRANSFORMER_SENSOR)
+        self.sensor = Sensors(base='', station='ua-mac', sensor=configuration.TRANSFORMER_SENSOR)
         leaf_name = self.sensor.get_display_name()
 
         # Get our trimmed metadata
-        terraref_md_trim = get_terraref_metadata(parse_md)
+        terraref_md_trim = tr_get_terraref_metadata(parse_md)
         if updated_experiment is not None:
-            terra_md_trim['experiment_metadata'] = updated_experiment
+            terraref_md_trim['experiment_metadata'] = updated_experiment
+
+        # Get the list of files, if there are some
+        file_list = []
+        if args.file_list:
+            for one_file in args.file_list:
+                # Filter out arguments that are obviously not files
+                if not one_file.startswith('-'):
+                    file_list.append(one_file)
 
         # Prepare our parameters
         check_md = {'timestamp': timestamp,
+                    'season': season_name,
+                    'experiment': experiment_name,
                     'container_name': None,
+                    'target_container_name': leaf_name, # TODO: Is this needed?
                     'trigger_name': None,
                     'context_md': terraref_md_trim,
                     'working_folder': args.working_space,
-                    'list_files': None
+                    'list_files': lambda: file_list
                    }
 
         return {'check_md': check_md,
-                'transformer_md': get_extractor_metadata(terraref_md, configuration.TRANSFORMER_NAME),
+                'transformer_md': tr_get_extractor_metadata(terraref_md, configuration.TRANSFORMER_NAME),
                 'full_md': parse_md
                }
