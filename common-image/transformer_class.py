@@ -62,18 +62,19 @@ class Transformer():
         """
         return configuration.TRANSFORMER_SENSOR
 
-    def generate_transformer_md() -> dict:
+    # pylint: disable=no-self-use
+    def generate_transformer_md(self) -> dict:
         """Generates metadata about this transformer
         Returns:
             Returns the transformer metadata
         """
-        md = {
-                'version': configuration.TRANSFORMER_VERSION,
-                'name': configuration.TRANSFORMER_NAME,
-                'author': configuration.AUTHOR_NAME,
-                'description': configuration.TRANSFORMER_DESCRIPTION,
-                'repository': {'repUrl': configuration.REPOSITORY}
-              }
+        return {
+            'version': configuration.TRANSFORMER_VERSION,
+            'name': configuration.TRANSFORMER_NAME,
+            'author': configuration.AUTHOR_NAME,
+            'description': configuration.TRANSFORMER_DESCRIPTION,
+            'repository': {'repUrl': configuration.REPOSITORY}
+        }
 
     # pylint: disable=no-self-use
     def add_parameters(self, parser: argparse.ArgumentParser) -> None:
