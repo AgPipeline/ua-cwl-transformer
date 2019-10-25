@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import logging
 
 from pyclowder.utils import setup_logging as pyc_setup_logging
 from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadata, \
@@ -11,6 +12,10 @@ from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadat
 from terrautils.sensors import Sensors
 
 import configuration
+
+import terrautils.lemnatec
+
+terrautils.lemnatec.SENSOR_METADATA_CACHE = os.path.dirname(os.path.realpath(__file__))
 
 class __internal__():
     """Class containing functions for this file only
@@ -104,12 +109,12 @@ class Transformer():
         else:
             parse_md = metadata
 
-        terraref_md = tr_get_terraref_metadata(parse_md, configuration.TRANSFORMER_TYPE)
+        terraref_md = tr_get_terraref_metadata(parse_md, configuration.TRANSFORMER_SENSOR)
         if not terraref_md:
             return {'code': -5001, 'error': "Unable to load Gantry information from metadata for '%s'" % \
                                                                                     configuration.TRANSFORMER_TYPE}
 
-        timestamp = __internal__.get_metadata_timestamp(terraref_md)
+        timestamp = __internal__.get_metadata_timestamp(parse_md)
         if not timestamp:
             return {'code': -5002, 'error': "Unable to locate timestamp in metadata for '%s'" % \
                                                                                     configuration.TRANSFORMER_TYPE}
