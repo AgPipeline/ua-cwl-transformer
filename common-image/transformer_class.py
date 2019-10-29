@@ -54,6 +54,7 @@ class Transformer():
             kwargs: additional parameters passed in to Transformer
         """
         self.sensor = None
+        self.args = None
 
     @property
     def default_epsg(self):
@@ -102,6 +103,8 @@ class Transformer():
         """
         # Setup logging
         pyc_setup_logging(args.logging)
+
+        self.args = args
 
         # Determine if we're using JSONLD (which we should be)
         if 'content' in metadata:
