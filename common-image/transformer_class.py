@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import logging
 
 from pyclowder.utils import setup_logging as pyc_setup_logging
 from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadata, \
@@ -11,6 +12,10 @@ from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadat
 from terrautils.sensors import Sensors
 
 import configuration
+
+import terrautils.lemnatec
+
+terrautils.lemnatec.SENSOR_METADATA_CACHE = os.path.dirname(os.path.realpath(__file__))
 
 class __internal__():
     """Class containing functions for this file only
@@ -49,6 +54,7 @@ class Transformer():
             kwargs: additional parameters passed in to Transformer
         """
         self.sensor = None
+        self.args = None
 
     @property
     def default_epsg(self):
@@ -62,18 +68,19 @@ class Transformer():
         """
         return configuration.TRANSFORMER_SENSOR
 
-    def generate_transformer_md() -> dict:
+    # pylint: disable=no-self-use
+    def generate_transformer_md(self) -> dict:
         """Generates metadata about this transformer
         Returns:
             Returns the transformer metadata
         """
-        md = {
-                'version': configuration.TRANSFORMER_VERSION,
-                'name': configuration.TRANSFORMER_NAME,
-                'author': configuration.AUTHOR_NAME,
-                'description': configuration.TRANSFORMER_DESCRIPTION,
-                'repository': {'repUrl': configuration.REPOSITORY}
-              }
+        return {
+            'version': configuration.TRANSFORMER_VERSION,
+            'name': configuration.TRANSFORMER_NAME,
+            'author': configuration.AUTHOR_NAME,
+            'description': configuration.TRANSFORMER_DESCRIPTION,
+            'repository': {'repUrl': configuration.REPOSITORY}
+        }
 
     # pylint: disable=no-self-use
     def add_parameters(self, parser: argparse.ArgumentParser) -> None:
@@ -97,18 +104,20 @@ class Transformer():
         # Setup logging
         pyc_setup_logging(args.logging)
 
+        self.args = args
+
         # Determine if we're using JSONLD (which we should be)
         if 'content' in metadata:
             parse_md = metadata['content']
         else:
             parse_md = metadata
 
-        terraref_md = tr_get_terraref_metadata(parse_md, configuration.TRANSFORMER_TYPE)
+        terraref_md = tr_get_terraref_metadata(parse_md, configuration.TRANSFORMER_SENSOR)
         if not terraref_md:
             return {'code': -5001, 'error': "Unable to load Gantry information from metadata for '%s'" % \
                                                                                     configuration.TRANSFORMER_TYPE}
 
-        timestamp = __internal__.get_metadata_timestamp(terraref_md)
+        timestamp = __internal__.get_metadata_timestamp(parse_md)
         if not timestamp:
             return {'code': -5002, 'error': "Unable to locate timestamp in metadata for '%s'" % \
                                                                                     configuration.TRANSFORMER_TYPE}
