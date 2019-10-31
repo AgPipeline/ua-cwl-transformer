@@ -3,17 +3,15 @@
 
 import os
 import argparse
-import logging
 
 from pyclowder.utils import setup_logging as pyc_setup_logging
 from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadata, \
                                 get_season_and_experiment as tr_get_season_and_experiment, \
                                 get_extractor_metadata as tr_get_extractor_metadata
 from terrautils.sensors import Sensors
+import terrautils.lemnatec
 
 import configuration
-
-import terrautils.lemnatec
 
 terrautils.lemnatec.SENSOR_METADATA_CACHE = os.path.dirname(os.path.realpath(__file__))
 

@@ -14,6 +14,32 @@ It's expected that common functions will be added to our Transformer class as ad
 Now that an environment has been provided through this code, a transformer template needs to be cloned and developed.
 In most cases the result of cloning the developing the transformer template will provide a final product.
 
+### Named Parameters
+The named parameters provided to transformers are:
+- check_md: contains request specific information
+- transformer_md: contains a list of metadata specific to a transformer that was pulled from the overall request metadata
+- full_md: the full set of metadata for the current request.
+
+#### check_md
+This parameter is a dict and contains request specific information.
+- timestamp: the timestamp associated with this request (pulled from the metadata)
+- season: the name of the season (pulled from the metadata)
+- experiment: the name of the experiment (pulled from the metadata)
+- container_name: the name of the source container when specified
+- target_container_name: name generated from the configured sensor information
+- trigger_name: name of what triggered the current request
+- context_md: the gantry metadata and sensor specific fixed metadata
+- working_folder: the location of the working folder
+- list_files: a function that returns the list of relevent files for this request
+
+### transformer_md
+Contains any transformer specific metadata as set by previous runs of the transformer.
+The transformer name is used to determine relevent metadata.
+
+#### full_md
+The full set of metadata for this request.
+If the metadata was in JSONLD format, this parameter will contain the content and not the full JSON.
+
 ## Docker Image Notes
 This section contains information on the Dockerfile and some build notes.
 
