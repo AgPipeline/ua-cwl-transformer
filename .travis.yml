@@ -3,19 +3,21 @@ services:
 
 before_install:
 # Build final image & name it (metadata cleaner for example)
-docker build -t common_image
+docker build -t travis-common-image common-image
 
 # add pylint testing stuff into new image
 # Create testing script entry point
   echo '#!/bin/bash' >> pylinter.sh
-  echo 'pylint --rcfile=Organization-info/pylint.rc common-image/*.py' >> new_entry.sh
-  echo 'pylint --rcfile=Organization-info/pylint.rc common-image/**/*.py' >> new_entry.sh
+  echo 'pylint --rcfile=home/extractor/Organization-info/pylint.rc common-image/*.py' >> new_entry.sh
+  echo 'pylint --rcfile=home/extractor/Organization-info/pylint.rc common-image/**/*.py' >> new_entry.sh
 # create docker image with pytest and pylint srcipt
   echo "FROM common-image" > my_dockerfile
   echo "COPY new_entry.sh /home/extractor/" >> my_dockerfile
   echo "COPY common-image/test-files/* /home/extractor/test-files" >> my_dockerfile
+  echo "RUN git clone https://github.com/AgPipeline/Organization-info.git /home/extractor/Organization-info" >> my_dockerfile
   echo "RUN chmod a+x /home/extractor/new_entry.sh" >> my_dockerfile
-  echo "RUN python3 -m pytest -v "
+  echo "RUN cd home/extractor/"
+  echo "RUN python3 -m pytest -v"
 
  
 #  - docker build common-image
