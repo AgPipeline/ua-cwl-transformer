@@ -1,0 +1,26 @@
+services:
+ - docker
+
+before_install:
+# Build final image & name it (metadata cleaner for example)
+docker build -t common_image
+
+# add pylint testing stuff into new image
+# Create testing script entry point
+  echo '#!/bin/bash' >> pylinter.sh
+  echo 'pylint --rcfile=Organization-info/pylint.rc common-image/*.py' >> new_entry.sh
+  echo 'pylint --rcfile=Organization-info/pylint.rc common-image/**/*.py' >> new_entry.sh
+# create docker image with pytest and pylint srcipt
+  echo "FROM common-image" > my_dockerfile
+  echo "COPY new_entry.sh /home/extractor/" >> my_dockerfile
+  echo "COPY common-image/test-files/* /home/extractor/test-files" >> my_dockerfile
+  echo "RUN chmod a+x /home/extractor/new_entry.sh" >> my_dockerfile
+  echo "RUN python3 -m pytest -v "
+
+ 
+#  - docker build common-image
+
+script:
+ - docker build -f my_dockerfile my_nifty_image
+ - docker run -i -t --entry-point /home/extractor/new_entry.sh my_nifty_image 
+ - docker run -it common_image <parameters>
