@@ -14,10 +14,7 @@ COPY test-files/*.py /home/extractor/test-files/
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         git && \
-    git clone https://github.com/AgPipeline/Organization-info.git /home/extractor/Organization-info \
-    apt-get remove -y \
-        git && \
-    apt-get autoremove -y
+    git clone https://github.com/AgPipeline/Organization-info.git /home/extractor/Organization-info 
 
 RUN pylint \ 
     --rcfile=/home/extractor/Organization-info/pylint.rc common-image/*.py \

@@ -76,6 +76,4 @@ RUN apt-get autoremove -y && \
 # Set to the user we want to be
 USER extractor
 
-RUN ls
-
 COPY *.py /home/extractor/
