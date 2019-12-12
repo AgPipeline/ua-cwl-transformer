@@ -6,4 +6,5 @@ before_install:
  - docker build -t common-image common-image
 
 script:
- - docker build -t -f testing_dockerfile testing-image
+ - docker build -ft testing_dockerfile testing-image
+ - docker run testing-image
