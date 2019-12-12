@@ -8,11 +8,8 @@ RUN python3 -m pip install --upgrade --no-cache-dir \
     pylint\
     pytest
 
-WORKDIR /home/extractor/
 
-RUN ls
-
-COPY common-image/test-files/*.py /home/extractor/test-files/
+COPY test-files/*.py /home/extractor/test-files/
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -26,7 +23,7 @@ RUN pylint \
     --rcfile=/home/extractor/Organization-info/pylint.rc common-image/*.py \
     --rcfile=/home/extractor/Organization-info/pylint.rc common-image/**/*.py
 
-COPY common-image/test-files/*.sh /home/extractor/
+COPY test-files/*.sh /home/extractor/
 RUN chmod a+x /home/extractor/test_entry.sh
 
 USER extractor
