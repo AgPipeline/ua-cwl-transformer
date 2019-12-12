@@ -6,10 +6,5 @@ before_install:
  - docker build -t common-image common-image
 
 script:
- - ls
- - ls common-image
- - ls common-image/test-files
- - ls common-image/test-files/*.py
- - pwd
- - docker build -t test-image test-image
+ - docker build -t test-image:latest test-image
  - docker run test-image
