@@ -8,7 +8,7 @@ RUN python3 -m pip install --upgrade --no-cache-dir \
     pylint\
     pytest
 
-COPY common-image/test-files/* /home/extractor/test-files
+COPY common-image/test-files/*.py /home/extractor/test-files
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
