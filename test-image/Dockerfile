@@ -8,13 +8,8 @@ RUN python3 -m pip install --upgrade --no-cache-dir \
     pylint\
     pytest
 
-RUN cd /home
-
-RUN ls
-
-RUN cd /extractor/
-
-RUN ls
+RUN cd /home/extractor \
+    ls
 
 COPY common-image/ /home/extractor/test-files/
 
