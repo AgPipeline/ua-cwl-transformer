@@ -25,8 +25,3 @@ RUN chmod a+x /home/extractor/test_entry.sh
 
 USER extractor
 ENTRYPOINT ["/home/extractor/test_entry.sh"]
-
-RUN apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -rf ~/.cache/pip
