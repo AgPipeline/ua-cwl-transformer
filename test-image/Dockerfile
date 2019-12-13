@@ -16,9 +16,9 @@ RUN apt-get update && \
         git && \
     git clone https://github.com/AgPipeline/Organization-info.git /home/extractor/Organization-info 
 
-RUN pylint \ 
-    --rcfile=/home/extractor/Organization-info/pylint.rc /home/extractor/*.py \
-    --rcfile=/home/extractor/Organization-info/pylint.rc /home/extractor/test-files/*.py
+#RUN pylint \ 
+#   --rcfile=/home/extractor/Organization-info/pylint.rc /home/extractor/*.py \
+#    --rcfile=/home/extractor/Organization-info/pylint.rc /home/extractor/test-files/*.py
 
 COPY test-files/*.sh /home/extractor/
 RUN chmod a+x /home/extractor/test_entry.sh
