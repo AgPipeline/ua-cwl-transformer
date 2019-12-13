@@ -68,6 +68,12 @@ class Transformer():
         """
         return configuration.TRANSFORMER_SENSOR
 
+    @property
+    def supported_image_file_exts(self):
+        """Returns the list of supported image file extension strings (in lower case)
+        """
+        return ['tif', 'tiff', 'jpg']
+
     def get_image_file_epsg(self, source_path: str) -> str:
         """Returns the EPSG of the georeferenced image file
         Arguments:

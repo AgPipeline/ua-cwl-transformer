@@ -1,4 +1,0 @@
-[submodule "rgb-plot-base-transformer/rgb-plot-code"]
-	path = rgb-plot-base-transformer/rgb-plot-code
-	url = https://github.com/AgPipeline/drone-pipeline-environment.git
-	branch = common_transformers
