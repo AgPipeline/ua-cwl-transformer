@@ -23,5 +23,4 @@ RUN apt-get update && \
 COPY test-files/*.sh /home/extractor/
 RUN chmod a+x /home/extractor/test_entry.sh
 
-USER extractor
 ENTRYPOINT ["/home/extractor/test_entry.sh"]
