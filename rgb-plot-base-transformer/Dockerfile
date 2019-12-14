@@ -1,7 +1,7 @@
 FROM agpipeline/gantry-base-image:latest
 LABEL maintainer="Chris Schnaufer <schnaufer@email.arizona.edu>"
 
-COPY rgb-plot-code/rgb-plot-base-transformer/requirements.txt rgb-plot-code/rgb-plot-base-transformer/packages.txt /home/extractor/
+COPY requirements.txt packages.txt /home/extractor/
 
 USER root
 
@@ -27,5 +27,5 @@ RUN [ -s /home/extractor/requirements.txt ] && \
 
 USER extractor
 
-COPY rgb-plot-code/rgb-plot-base-transformer/*.py /home/extractor/
+COPY *.py /home/extractor/
 

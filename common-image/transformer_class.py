@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import logging
 
 from pyclowder.utils import setup_logging as pyc_setup_logging
 from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadata, \
@@ -123,7 +124,7 @@ class Transformer():
         parser.epilog = configuration.TRANSFORMER_NAME + ' version ' + configuration.TRANSFORMER_VERSION + \
                         ' author ' + configuration.AUTHOR_NAME + ' ' + configuration.AUTHOR_EMAIL
 
-    def get_transformer_params(self, args: argparse.Namespace, metadata: dict) -> dict:
+    def get_transformer_params(self, args: argparse.Namespace, metadata_list: list) -> dict:
         """Returns a parameter list for processing data
         Arguments:
             args: result of calling argparse.parse_args
@@ -136,6 +137,7 @@ class Transformer():
         self.args = args
 
         # Determine if we're using JSONLD (which we should be)
+        metadata = metadata_list[0]
         if 'content' in metadata:
             parse_md = metadata['content']
         else:
@@ -186,5 +188,5 @@ class Transformer():
 
         return {'check_md': check_md,
                 'transformer_md': tr_get_extractor_metadata(terraref_md, configuration.TRANSFORMER_NAME),
-                'full_md': parse_md
+                'full_md': [parse_md]
                }
