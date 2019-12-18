@@ -1,7 +1,6 @@
 # Transformer: base RGB Plot-level
-<img src="https://github.com/az-digitalag/Drone-Processing-Pipeline/raw/07b1edc34a1faea501c80f583beb07f9d6b290bb/resources/drone-pipeline.png" width="100" />
 
-Provides the base image, or code, for plot-level RGB transformers for the [Drone Processing Pipeline](https://osf.io/xdkcy/wiki/home/).
+Provides the base image, or code, for plot-level RGB transformers for the UA Gantry Makeflow environment.
 
 The motivation behind this code is to significantly reduce the overhead in knowledge and work needed to add scientific algorithms to the pipeline.
 
