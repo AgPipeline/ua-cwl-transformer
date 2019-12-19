@@ -80,4 +80,4 @@ USER extractor
 
 COPY *.py /home/extractor/
 
-RUN cd home/extractor/ && python3 -m pytest
+RUN cd home/extractor/ && python3 -m pytest -v
