@@ -7,6 +7,7 @@ before_install:
 
 script:
  - cp common-image/*.py test-image/
+ - python3 -m pip install pylint
  - git clone https://github.com/AgPipeline/Organization-info.git
  - pylint --rcfile=Organization-info/pylint.rc test-image/*.py
  - docker build -t test-image:latest test-image
