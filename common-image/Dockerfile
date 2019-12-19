@@ -38,7 +38,9 @@ RUN python3 -m pip install --upgrade --no-cache-dir \
         Pillow \
         scipy \
         cryptography \
-        pyclowder
+        pyclowder \
+        pylint \
+        pytest
 
 RUN apt-get install -y --no-install-recommends \
         libgdal-dev \
@@ -77,3 +79,5 @@ RUN apt-get autoremove -y && \
 USER extractor
 
 COPY *.py /home/extractor/
+
+RUN cd home/extractor/ && python3 -m pytest

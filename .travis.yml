@@ -7,5 +7,6 @@ before_install:
 
 script:
  - docker build -t common-image common-image
- - docker build -t test-image:latest test-image
- - docker run test-image
+ - docker run common-image
+ # - docker build -t test-image:latest test-image
+# - docker run test-image
