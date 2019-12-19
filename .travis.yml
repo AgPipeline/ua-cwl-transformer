@@ -3,8 +3,9 @@ services:
 
 before_install:
 # Build final image & name it (metadata cleaner for example)
- - docker build -t common-image common-image
+
 
 script:
+ - docker build -t common-image common-image
  - docker build -t test-image:latest test-image
  - docker run test-image
