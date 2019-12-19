@@ -1,5 +1,7 @@
 """Tests for transformer_class.py
 """
+# pylint:disable=import-error
+# pylint:disable=unused-import
 
 #Import transformer_class.py module and inmedded modules
 import argparse
@@ -11,7 +13,7 @@ from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadat
                                 get_extractor_metadata as tr_get_extractor_metadata
 from terrautils.sensors import Sensors
 import transformer_class
-#import configuration
+import configuration
 
 terrautils.lemnatec.SENSOR_METADATA_CACHE = os.path.dirname(os.path.realpath(__file__))
 
@@ -21,8 +23,6 @@ TEST_INTERNAL = transformer_class.__internal__()
 PARSE = argparse.Namespace()
 
 
-# pylint:disable=import-error
-# pylint:disable=unused-import
 def test_get_metadata_timestamp():
     """Test for get_metadata_timestamp method within the __internal__ class
     """
