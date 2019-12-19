@@ -3,11 +3,12 @@ LABEL maintainer="Jorge Barrios <jorgebarrios@email.arizona.edu>"
 
 USER root
 
+RUN python3 -m pip install --upgrade --no-cache-dir pip
 RUN python3 -m pip install --upgrade --no-cache-dir setuptools
 RUN python3 -m pip install --upgrade --no-cache-dir \
     pylint\
-    pytest
-
+    pytest \
+    matplotlib
 
 COPY test-files/*.py /home/extractor/test-files/
 
