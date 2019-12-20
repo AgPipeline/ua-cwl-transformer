@@ -80,4 +80,8 @@ USER extractor
 
 COPY *.py /home/extractor/
 
+COPY *.rc /home/extractor/
+
+RUN python3 -m pylint --rcfile=home/extractor/pylint.rc home/extractor/*.py
+
 RUN cd home/extractor/ && python3 -m pytest -v

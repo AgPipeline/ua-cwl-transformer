@@ -1,16 +1,10 @@
-language: python
-python:
- - "3.6"
-
 services:
  - docker
- 
-install:
- - "pip3 install pylint"
 
 script:
  - cp common-image/*.py test-image/
  - git clone https://github.com/AgPipeline/Organization-info.git
- - pylint --rcfile=Organization-info/pylint.rc test-image/*.py
+ - cp Organization-info/pylint.rc test-image/
+# - pylint --rcfile=Organization-info/pylint.rc test-image/*.py
  - docker build -t test-image:latest test-image
  - docker run test-image
