@@ -1,6 +1,7 @@
 services:
  - docker
  - python3
+ - pip
 
 before_install:
 # Build final image & name it (metadata cleaner for example)
