@@ -2,7 +2,7 @@ services:
  - docker
 
 install:
- - "pip install pylint"
+ - "pip3 install pylint"
 
 script:
  - cp common-image/*.py test-image/
