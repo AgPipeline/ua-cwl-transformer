@@ -75,14 +75,7 @@ RUN apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf ~/.cache/pip
 
-# Set to the user we want to be
-#USER extractor
-
 COPY *.py /home/extractor/
 
-COPY *.rc /home/extractor/
-
 # Running pylint over all py files
-RUN cd home/extractor/ &&  python3 -m \
-    pytest -v && \
-    pylint --rcfile=pylint.rc
+RUN cd home/extractor/ &&  python3 -m pytest -v
