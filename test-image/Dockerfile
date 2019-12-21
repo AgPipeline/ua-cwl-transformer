@@ -82,5 +82,5 @@ COPY *.py /home/extractor/
 
 # Running pylint over all py files
 RUN cd home/extractor/ &&  python3 -m \
-    pylint --rcfile=home/extractor/pylint.rc home/extractor/*.py && \
+    pylint --rcfile=pylint.rc /*.py && \
     pytest -v
