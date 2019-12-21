@@ -88,7 +88,7 @@ COPY *.rc /home/extractor/
 # Running pytest
 #RUN cd home/extractor/ && python3 -m pytest -v
 
-COPY test-files/*.sh /home/extractor/
+COPY *.sh /home/extractor/
 
 RUN chmod a+x /home/extractor/test_entry.sh
 
