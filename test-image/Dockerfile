@@ -80,16 +80,7 @@ RUN apt-get autoremove -y && \
 
 COPY *.py /home/extractor/
 
-COPY *.rc /home/extractor/
-
 # Running pylint over all py files
-#RUN python3 -m pylint --rcfile=home/extractor/pylint.rc home/extractor/*.py
-
-# Running pytest
-#RUN cd home/extractor/ && python3 -m pytest -v
-
-COPY *.sh /home/extractor/
-
-RUN chmod a+x /home/extractor/test_entry.sh
-
-ENTRYPOINT ["/home/extractor/test_entry.sh"]
+RUN cd home/extractor/ &&  python3 -m \
+    pylint --rcfile=home/extractor/pylint.rc home/extractor/*.py && \
+    pytest -v
