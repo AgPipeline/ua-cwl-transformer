@@ -76,7 +76,7 @@ RUN apt-get autoremove -y && \
     rm -rf ~/.cache/pip
 
 # Set to the user we want to be
-USER extractor
+#USER extractor
 
 COPY *.py /home/extractor/
 
