@@ -80,6 +80,8 @@ RUN apt-get autoremove -y && \
 
 COPY *.py /home/extractor/
 
+COPY *.rc /home/extractor/
+
 # Running pylint over all py files
 RUN cd home/extractor/ &&  python3 -m \
     pylint --rcfile=pylint.rc /*.py && \
