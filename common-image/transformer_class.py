@@ -45,6 +45,19 @@ class __internal__():
 
         return timestamp
 
+    @staticmethod
+    def get_datestamp(timestamp: str) -> str:
+        """Returns the date of the timestamp
+        Arguments:
+            timestamp: assumed to be in ISO 8601 format
+        Return:
+            Returns the found date. If a non-ISO 8601 formatted timestamp is specified, the entire source timestamp
+            is returned.
+        """
+        if 'T' in timestamp:
+            return timestamp.split('T')[0]
+        return timestamp
+
 class Transformer():
     """Generic class for supporting transformers
     """
@@ -155,7 +168,8 @@ class Transformer():
 
         # Fetch experiment name from terra metadata
         season_name, experiment_name, updated_experiment = \
-                                    tr_get_season_and_experiment(timestamp, configuration.TRANSFORMER_TYPE, terraref_md)
+                                    tr_get_season_and_experiment(__internal__.get_datestamp(timestamp),
+                                                                 configuration.TRANSFORMER_TYPE, terraref_md)
 
         # Setup our sensor
         self.sensor = Sensors(base='', station='ua-mac', sensor=configuration.TRANSFORMER_SENSOR)
