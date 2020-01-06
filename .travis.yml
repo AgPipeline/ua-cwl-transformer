@@ -1,6 +1,21 @@
 services:
  - docker
 
+ language: python
+
+ python:
+    - "3.6"
+
+cache: pip
+
+install: 
+    - "pip install pytest"
+    - "pip install pylint"
+
+before_script:
+    - "git clone https://github.com/AgPipeline/Organization-info.git"
+    - "pylint --rcfile=Organization-info/pylint.rc common-image/*.py"
+
 script:
 # Moving file from the common-image to test-image before building
  - cp common-image/*.py test-image/
