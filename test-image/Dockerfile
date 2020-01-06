@@ -76,9 +76,5 @@ RUN apt-get autoremove -y && \
     rm -rf ~/.cache/pip
 
 COPY *.py /home/extractor/
-COPY *.rc /home/extractor/
-
-# Running pylint over all py files
-RUN pylint --rcfile=/home/extractor/pylint.rc *.py
 
 RUN cd /home/extractor/ &&  python3 -m pytest -v
