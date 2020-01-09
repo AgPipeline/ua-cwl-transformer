@@ -15,11 +15,11 @@ install:
 script:
 # Moving file from the common-image to test-image before building
  - cp common-image/*.py test-image/
-#Building the image and runnning the test within, see test-image folder for documentation there
+# Building the image and runnning the test within, see test-image folder for documentation there
  - docker build -t test-image:latest test-image
  - docker run test-image
  
 after_script:
+# This will clone our ogranization's pylint protocols and run them over all the code within the image
     - "git clone https://github.com/AgPipeline/Organization-info.git"
     - "pylint --rcfile=Organization-info/pylint.rc common-image/*.py"
-

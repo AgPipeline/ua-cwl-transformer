@@ -1,5 +1,5 @@
 FROM agpipeline/base-image:1.0
-LABEL maintainer="Chris Schnaufer <schnaufer@email.arizona.edu>"
+LABEL maintainer="Jorge Barrios <jorgebarrios@email.arizona.edu>"
 
 # Build environment values
 ARG arg_terrautil_url=https://github.com/terraref/terrautils.git
@@ -75,6 +75,8 @@ RUN apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf ~/.cache/pip
 
+#Move all files within the container's file directory
 COPY *.py /home/extractor/
 
+#Run tests
 RUN cd /home/extractor/ &&  python3 -m pytest -v
