@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import logging
 
 from pyclowder.utils import setup_logging as pyc_setup_logging
 from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadata, \
@@ -44,6 +45,19 @@ class __internal__():
 
         return timestamp
 
+    @staticmethod
+    def get_datestamp(timestamp: str) -> str:
+        """Returns the date of the timestamp
+        Arguments:
+            timestamp: assumed to be in ISO 8601 format
+        Return:
+            Returns the found date. If a non-ISO 8601 formatted timestamp is specified, the entire source timestamp
+            is returned.
+        """
+        if 'T' in timestamp:
+            return timestamp.split('T')[0]
+        return timestamp
+
 class Transformer():
     """Generic class for supporting transformers
     """
@@ -67,6 +81,12 @@ class Transformer():
         """Returns the name of the sensor we represent
         """
         return configuration.TRANSFORMER_SENSOR
+
+    @property
+    def supported_image_file_exts(self):
+        """Returns the list of supported image file extension strings (in lower case)
+        """
+        return ['tif', 'tiff', 'jpg']
 
     def get_image_file_epsg(self, source_path: str) -> str:
         """Returns the EPSG of the georeferenced image file
@@ -117,7 +137,7 @@ class Transformer():
         parser.epilog = configuration.TRANSFORMER_NAME + ' version ' + configuration.TRANSFORMER_VERSION + \
                         ' author ' + configuration.AUTHOR_NAME + ' ' + configuration.AUTHOR_EMAIL
 
-    def get_transformer_params(self, args: argparse.Namespace, metadata: dict) -> dict:
+    def get_transformer_params(self, args: argparse.Namespace, metadata_list: list) -> dict:
         """Returns a parameter list for processing data
         Arguments:
             args: result of calling argparse.parse_args
@@ -130,6 +150,7 @@ class Transformer():
         self.args = args
 
         # Determine if we're using JSONLD (which we should be)
+        metadata = metadata_list[0]
         if 'content' in metadata:
             parse_md = metadata['content']
         else:
@@ -147,7 +168,8 @@ class Transformer():
 
         # Fetch experiment name from terra metadata
         season_name, experiment_name, updated_experiment = \
-                                    tr_get_season_and_experiment(timestamp, configuration.TRANSFORMER_TYPE, terraref_md)
+                                    tr_get_season_and_experiment(__internal__.get_datestamp(timestamp),
+                                                                 configuration.TRANSFORMER_TYPE, terraref_md)
 
         # Setup our sensor
         self.sensor = Sensors(base='', station='ua-mac', sensor=configuration.TRANSFORMER_SENSOR)
@@ -180,5 +202,5 @@ class Transformer():
 
         return {'check_md': check_md,
                 'transformer_md': tr_get_extractor_metadata(terraref_md, configuration.TRANSFORMER_NAME),
-                'full_md': parse_md
+                'full_md': [parse_md]
                }
