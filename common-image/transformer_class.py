@@ -3,7 +3,6 @@
 
 import os
 import argparse
-import logging
 
 from pyclowder.utils import setup_logging as pyc_setup_logging
 from terrautils.metadata import get_terraref_metadata as tr_get_terraref_metadata, \
