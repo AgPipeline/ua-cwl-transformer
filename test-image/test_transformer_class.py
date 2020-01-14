@@ -1,6 +1,5 @@
 """Tests for transformer_class.py
 """
-# pylint:disable=import-error
 
 # Import transformer_class.py module and inmedded modules
 import argparse
