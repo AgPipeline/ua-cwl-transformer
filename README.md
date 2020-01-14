@@ -20,4 +20,4 @@ If you are creating a new folder for a new image, please use a meaningful prefix
 Also, be sure to read about how to [contribute](https://github.com/AgPipeline/Organization-info) to this organization.
 
 ## Testing 
-The testing modules and readme can be found in the [testing image](https://github.com/AgPipeline/ua-gantry-environment/tree/test-development/test-image)
+The testing modules and readme can be found in the [testing image](https://github.com/AgPipeline/ua-gantry-environment/tree/test-development/test-image) folder.
