@@ -1,5 +1,5 @@
 FROM agpipeline/gantry-base-image:latest
-LABEL maintainer="Chris Schnaufer <schnaufer@email.arizona.edu>"
+LABEL maintainer="Jorge Barrios <jorgebarrios@email.arizona.edu>"
 
 COPY requirements.txt packages.txt /home/extractor/
 
