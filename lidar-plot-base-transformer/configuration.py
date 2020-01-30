@@ -5,16 +5,16 @@
 TRANSFORMER_VERSION = '1.0'
 
 # The transformer description
-TRANSFORMER_DESCRIPTION = 'Base for plot-level RGB-based algorithm transformers'
+TRANSFORMER_DESCRIPTION = 'Base for plot-level Lidar-based algorithm transformers'
 
 # Short name of the transformer
-TRANSFORMER_NAME = 'rgb-plot-level-base'
+TRANSFORMER_NAME = 'lidar-plot-level-base'
 
 # The sensor associated with the transformer
-TRANSFORMER_SENSOR = 'stereoTop'
+TRANSFORMER_SENSOR = ''
 
 # The transformer type (eg: 'rgbmask', 'plotclipper')
-TRANSFORMER_TYPE = 'rgb.algorithm.base'
+TRANSFORMER_TYPE = 'lidar.algorithm.base'
 
 # The name of the author of the extractor
 AUTHOR_NAME = 'Chris Schnaufer'

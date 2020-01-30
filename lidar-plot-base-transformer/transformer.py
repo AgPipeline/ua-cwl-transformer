@@ -1,4 +1,4 @@
-"""Base of plot-level RGB transformer
+"""Base of plot-level Lidar transformer
 """
 import argparse
 import datetime
@@ -14,7 +14,7 @@ import gdal
 from osgeo import ogr
 
 import transformer_class
-import algorithm_rgb
+import algorithm_lidar
 
 # Number of tries to open a CSV file before we give up
 MAX_CSV_FILE_OPEN_TRIES = 10
@@ -50,9 +50,9 @@ RANDOM_GENERATOR = None
 LAT_LON_EPSG_CODE = 4326
 
 # Names of files generated
-FILE_NAME_CSV = "rgb_plot.csv"
-FILE_NAME_GEO_CSV = "rgb_plot_geo.csv"
-FILE_NAME_BETYDB_CSV = "rgb_plot_betydb.csv"
+FILE_NAME_CSV = "lidar_plot.csv"
+FILE_NAME_GEO_CSV = "lidar_plot_geo.csv"
+FILE_NAME_BETYDB_CSV = "lidar_plot_betydb.csv"
 
 class __internal__():
     """Class containing functions for this file only
@@ -70,8 +70,8 @@ class __internal__():
             default_value: the default value to return if the variable is not defined or is None
         """
         value = False
-        if hasattr(algorithm_rgb, variable_name):
-            temp_name = getattr(algorithm_rgb, variable_name)
+        if hasattr(algorithm_lidar, variable_name):
+            temp_name = getattr(algorithm_lidar, variable_name)
             if temp_name:
                 value = True
             elif temp_name is not None:
@@ -81,7 +81,7 @@ class __internal__():
 
     @staticmethod
     def get_algorithm_definition_str(variable_name: str, default_value: str = '') -> str:
-        """Returns the value of the string variable found in algorithm_rgb
+        """Returns the value of the string variable found in algorithm_lidar
         Arguments:
             variable_name: the name of the definition to find
             default_value: the default value to return if the variable isn't defined, is not a string, or has an empty value
@@ -89,8 +89,8 @@ class __internal__():
             If the variable can't be determined, the default value is returned
         """
         value = None
-        if hasattr(algorithm_rgb, variable_name):
-            temp_name = getattr(algorithm_rgb, variable_name)
+        if hasattr(algorithm_lidar, variable_name):
+            temp_name = getattr(algorithm_lidar, variable_name)
             if isinstance(temp_name, str):
                 value = temp_name.strip()
 
@@ -112,12 +112,12 @@ class __internal__():
         Note:
             Assumes that multiple variable-related strings are comma separated
         """
-        if not hasattr(algorithm_rgb, definition_name):
-            raise RuntimeError("Unable to find %s defined in algorithm_rgb code" % definition_name)
+        if not hasattr(algorithm_lidar, definition_name):
+            raise RuntimeError("Unable to find %s defined in algorithm_lidar code" % definition_name)
 
-        names = getattr(algorithm_rgb, definition_name).strip()
+        names = getattr(algorithm_lidar, definition_name).strip()
         if not names:
-            raise RuntimeError("Empty %s definition specified in algorithm_rgb code" % definition_name)
+            raise RuntimeError("Empty %s definition specified in algorithm_lidar code" % definition_name)
 
         return names.split(',')
 
@@ -128,8 +128,8 @@ class __internal__():
             A list of variable names
         """
         return_labels = []
-        if hasattr(algorithm_rgb, 'VARIABLE_LABELS'):
-            labels = getattr(algorithm_rgb, 'VARIABLE_LABELS').strip()
+        if hasattr(algorithm_lidar, 'VARIABLE_LABELS'):
+            labels = getattr(algorithm_lidar, 'VARIABLE_LABELS').strip()
             if labels:
                 return_labels = labels.split(',')
 
@@ -514,12 +514,12 @@ class __internal__():
         for field_name in fields:
             traits[field_name] = __internal__.get_default_trait(field_name)
 
-        if hasattr(algorithm_rgb, 'CITATION_AUTHOR') and getattr(algorithm_rgb, 'CITATION_AUTHOR'):
-            traits['citation_author'] = getattr(algorithm_rgb, 'CITATION_AUTHOR')
-        if hasattr(algorithm_rgb, 'CITATION_TITLE') and getattr(algorithm_rgb, 'CITATION_TITLE'):
-            traits['citation_title'] = getattr(algorithm_rgb, 'CITATION_TITLE')
-        if hasattr(algorithm_rgb, 'CITATION_YEAR') and getattr(algorithm_rgb, 'CITATION_YEAR'):
-            traits['citation_year'] = getattr(algorithm_rgb, 'CITATION_YEAR')
+        if hasattr(algorithm_lidar, 'CITATION_AUTHOR') and getattr(algorithm_lidar, 'CITATION_AUTHOR'):
+            traits['citation_author'] = getattr(algorithm_lidar, 'CITATION_AUTHOR')
+        if hasattr(algorithm_lidar, 'CITATION_TITLE') and getattr(algorithm_lidar, 'CITATION_TITLE'):
+            traits['citation_title'] = getattr(algorithm_lidar, 'CITATION_TITLE')
+        if hasattr(algorithm_lidar, 'CITATION_YEAR') and getattr(algorithm_lidar, 'CITATION_YEAR'):
+            traits['citation_year'] = getattr(algorithm_lidar, 'CITATION_YEAR')
 
         return (fields, traits)
 
@@ -550,14 +550,14 @@ class __internal__():
         for field_name in fields:
             traits[field_name] = __internal__.get_default_trait(field_name)
 
-        if hasattr(algorithm_rgb, 'CITATION_AUTHOR') and getattr(algorithm_rgb, 'CITATION_AUTHOR'):
-            traits['citation_author'] = getattr(algorithm_rgb, 'CITATION_AUTHOR')
-        if hasattr(algorithm_rgb, 'CITATION_TITLE') and getattr(algorithm_rgb, 'CITATION_TITLE'):
-            traits['citation_title'] = getattr(algorithm_rgb, 'CITATION_TITLE')
-        if hasattr(algorithm_rgb, 'CITATION_YEAR') and getattr(algorithm_rgb, 'CITATION_YEAR'):
-            traits['citation_year'] = getattr(algorithm_rgb, 'CITATION_YEAR')
-        if hasattr(algorithm_rgb, 'ALGORITHM_METHOD') and getattr(algorithm_rgb, 'ALGORITHM_METHOD'):
-            traits['method'] = getattr(algorithm_rgb, 'ALGORITHM_METHOD')
+        if hasattr(algorithm_lidar, 'CITATION_AUTHOR') and getattr(algorithm_lidar, 'CITATION_AUTHOR'):
+            traits['citation_author'] = getattr(algorithm_lidar, 'CITATION_AUTHOR')
+        if hasattr(algorithm_lidar, 'CITATION_TITLE') and getattr(algorithm_lidar, 'CITATION_TITLE'):
+            traits['citation_title'] = getattr(algorithm_lidar, 'CITATION_TITLE')
+        if hasattr(algorithm_lidar, 'CITATION_YEAR') and getattr(algorithm_lidar, 'CITATION_YEAR'):
+            traits['citation_year'] = getattr(algorithm_lidar, 'CITATION_YEAR')
+        if hasattr(algorithm_lidar, 'ALGORITHM_METHOD') and getattr(algorithm_lidar, 'ALGORITHM_METHOD'):
+            traits['method'] = getattr(algorithm_lidar, 'ALGORITHM_METHOD')
 
         return (fields, traits)
 
@@ -752,8 +752,8 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
     # pylint: disable=too-many-statements, too-many-locals
 
     # Environment checking
-    if not hasattr(algorithm_rgb, 'calculate'):
-        msg = "The 'calculate()' function was not found in algorithm_rgb.py"
+    if not hasattr(algorithm_lidar, 'calculate'):
+        msg = "The 'calculate()' function was not found in algorithm_lidar.py"
         logging.error(msg)
         return {'code': -1001, 'error': msg}
 
@@ -800,7 +800,7 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
             image_pix = np.array(gdal.Open(one_file).ReadAsArray())
 
             # Make the call and check the results
-            calc_value = algorithm_rgb.calculate(image_pix)
+            calc_value = algorithm_lidar.calculate(image_pix)
             logging.debug("Calculated value is %s for file: %s", str(calc_value), one_file)
             if calc_value is None:
                 continue

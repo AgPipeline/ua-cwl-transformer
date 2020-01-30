@@ -1,6 +1,6 @@
-# Transformer: base RGB Plot-level
+# Transformer: base Lidar Plot-level
 
-Provides the base image, or code, for plot-level RGB transformers for the UA Gantry Makeflow environment.
+Provides the base image, or code, for plot-level Lidar transformers for the UA Gantry Makeflow environment.
 
 The motivation behind this code is to significantly reduce the overhead in knowledge and work needed to add scientific algorithms to the pipeline.
 
@@ -21,7 +21,7 @@ In case people executing an algorithm wish to generate BETYdb or TERRA REF Geost
 Of course, these command line arguments are not necessary if the files are being written by default.
 
 ### Output path
-The `--csv_path` parameter is key to getting multiple instances of RGB plot-level transformers writing to the same file.
+The `--csv_path` parameter is key to getting multiple instances of Lidar plot-level transformers writing to the same file.
 For each instance of the same transformer that's run (either single- or multi-process), using the same path indicates that the produced data should be appended to the CSV files (dependent upon runtime environments).
 Of course, if the file doesn't already exist it's first created and the CSV header written before data is written.
 
