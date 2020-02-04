@@ -103,5 +103,10 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+<<<<<<< HEAD
 # pycharm
 .idea
+=======
+#reserve copies
+/reserves
+>>>>>>> test-development
