@@ -695,7 +695,7 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
     if __internal__.get_algorithm_definition_bool('WRITE_BETYDB_CSV', True):
         supported_files.append(FILE_NAME_BETYDB_CSV + ': BETYdb compatible CSV file')
 
-    parser.description = 'Plot level RGB algorithm: ' + __internal__.get_algorithm_name() + \
+    parser.description = 'Plot level lidar algorithm: ' + __internal__.get_algorithm_name() + \
                          ' version ' + __internal__.get_algorithm_definition_str('VERSION', 'x.y')
 
     parser.add_argument('--csv_path', help='the path to use when generating the CSV files')
