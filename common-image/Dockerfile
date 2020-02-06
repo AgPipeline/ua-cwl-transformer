@@ -1,4 +1,4 @@
-FROM agpipeline/base-image:1.1
+FROM agpipeline/base-image:latest
 LABEL maintainer="Chris Schnaufer <schnaufer@email.arizona.edu>"
 
 # Build environment values
