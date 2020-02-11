@@ -11,7 +11,7 @@ TRANSFORMER_DESCRIPTION = 'Base for plot-level Lidar-based algorithm transformer
 TRANSFORMER_NAME = 'lidar-plot-level-base'
 
 # The sensor associated with the transformer
-TRANSFORMER_SENSOR = ''
+TRANSFORMER_SENSOR = 'scanner3DTop'
 
 # The transformer type (eg: 'rgbmask', 'plotclipper')
 TRANSFORMER_TYPE = 'lidar.algorithm.base'
