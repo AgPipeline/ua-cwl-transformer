@@ -1,20 +1,29 @@
 """Base of plot-level Lidar transformer
 """
+
 import argparse
+import copy
 import datetime
+import json
+import liblas
 import logging
 import math
-import os
-import random
-import time
-import osr
 import numpy as np
-
-import gdal
+import os
 from osgeo import ogr
+import osr
+import random
+import re
+import subprocess
+import time
+from typing import Optional
+import yaml
 
-import transformer_class
+
+
 import algorithm_lidar
+import configuration
+import transformer_class
 
 # Number of tries to open a CSV file before we give up
 MAX_CSV_FILE_OPEN_TRIES = 10
@@ -197,83 +206,67 @@ class __internal__():
                     'labels': __internal__.get_algorithm_definition_str('VARIABLE_LABELS', '')
                })
 
-    @staticmethod
-    def image_get_geobounds(filename: str) -> list:
-        """Uses gdal functionality to retrieve rectilinear boundaries from the file
-
-        Args:
-            filename: path of the file to get the boundaries from
-
-        Returns:
-            The upper-left and calculated lower-right boundaries of the image in a list upon success.
-            The values are returned in following order: min_y, max_y, min_x, max_x. A list of numpy.nan
-            is returned if the boundaries can't be determined
-        """
-        try:
-            src = gdal.Open(filename)
-            ulx, xres, _, uly, _, yres = src.GetGeoTransform()
-            lrx = ulx + (src.RasterXSize * xres)
-            lry = uly + (src.RasterYSize * yres)
-
-            min_y = min(uly, lry)
-            max_y = max(uly, lry)
-            min_x = min(ulx, lrx)
-            max_x = max(ulx, lrx)
-
-            return [min_y, max_y, min_x, max_x]
-        except Exception as ex:
-            logging.exception("[image_get_geobounds] Exception caught processing file: %s", filename)
-
-        return [np.nan, np.nan, np.nan, np.nan]
 
     @staticmethod
-    def get_epsg(filename):
-        """Returns the EPSG of the geo-referenced image file
-        Args:
-            filename(str): path of the file to retrieve the EPSG code from
-        Return:
-            Returns the found EPSG code, or None if it's not found or an error ocurred
-        """
-        try:
-            src = gdal.Open(filename)
-
-            proj = osr.SpatialReference(wkt=src.GetProjection())
-
-            return proj.GetAttrValue('AUTHORITY', 1)
-        except Exception as ex:
-            logging.exception("[get_epsg] Exception caught processing file: %s", filename)
-
-        return None
-
-    @staticmethod
-    def get_centroid_latlon(filename: str):
-        """Returns the centroid of the geo-referenced image file as an OGR point
+    def get_las_epsg_from_header(header: liblas.header.Header) -> str:
+        """Returns the found EPSG code from the LAS header
         Arguments:
-            filename: the path to the file to get the centroid from
-        Returns:
-            Returns the centroid of the geometry loaded from the file in lat-lon coordinates
-        Exceptions:
-            RuntimeError is raised if the image is not a geo referenced image with an EPSG code,
-            the EPSG code is not supported, or another problems occurs
+            header: the loaded LAS header to find the SRID in
+        Return:
+            Returns the SRID as a string if found, None is returned otherwise
         """
-        bounds = __internal__.image_get_geobounds(filename)
-        if bounds[0] == np.nan:
-            msg = "File is not a geo-referenced image file: %s" % filename
-            logging.error(msg)
-            raise RuntimeError(msg)
+        epsg = None
+        search_terms_ordered = ['DATUM', 'AUTHORITY', '"EPSG"', ',']
+        try:
+            # Get the WKT from the header, find the DATUM, then finally the EPSG code
+            srs = header.get_srs()
+            wkt = srs.get_wkt().decode('UTF-8')
+            idx = -1
+            for term in search_terms_ordered:
+                idx = wkt.find(term)
+                if idx < 0:
+                    break
+            if idx >= 0:
+                epsg = re.search(r'\d+', wkt[idx:])[0]
+        except Exception as ex:
+            logging.debug("Unable to find EPSG in LAS file header")
+            logging.debug("    exception caught: %s", str(ex))
 
-        epsg = __internal__.get_epsg(filename)
+        return epsg
+
+    @staticmethod
+    def get_las_extents(file_path: str, default_epsg: int = None) -> Optional[str]:
+        """Calculate the extent of the given las file and return as GeoJSON.
+        Arguments:
+            file_path: path to the file from which to load the bounds
+            default_epsg: the default EPSG to assume if a file has a boundary but not a coordinate system
+        Return:
+            Returns the JSON representing the image boundary, or None if the
+            bounds could not be loaded
+        Notes:
+            If a file doesn't have a coordinate system and a default epsg is specified, the
+            return JSON will use the default_epsg.
+            If a file doesn't have a coordinate system and there isn't a default epsg specified, the boundary
+            of the image is not returned (None) and a warning is logged.
+        """
+        # Get the bounds and the EPSG code
+        las_info = liblas.file.File(file_path, mode='r')
+        min_bound = las_info.header.min
+        max_bound = las_info.header.max
+        epsg = __internal__.get_las_epsg_from_header(las_info.header)
         if epsg is None:
-            msg = "EPSG is not found in image file: '%s'" % filename
-            logging.error(msg)
-            raise RuntimeError(msg)
+            if default_epsg is not None:
+                epsg = default_epsg
+            else:
+                logging.warning("Unable to find EPSG and not default is specified for file '%s'", file_path)
+                return None
 
         ring = ogr.Geometry(ogr.wkbLinearRing)
-        ring.AddPoint(bounds[2], bounds[1])  # Upper left
-        ring.AddPoint(bounds[3], bounds[1])  # Upper right
-        ring.AddPoint(bounds[3], bounds[0])  # lower right
-        ring.AddPoint(bounds[2], bounds[0])  # lower left
-        ring.AddPoint(bounds[2], bounds[1])  # Closing the polygon
+        ring.AddPoint(min_bound[1], min_bound[0])  # Upper left
+        ring.AddPoint(min_bound[1], max_bound[0])  # Upper right
+        ring.AddPoint(max_bound[1], max_bound[0])  # lower right
+        ring.AddPoint(max_bound[1], min_bound[0])  # lower left
+        ring.AddPoint(min_bound[1], min_bound[0])  # Closing the polygon
 
         poly = ogr.Geometry(ogr.wkbPolygon)
         poly.AddGeometry(ring)
@@ -281,28 +274,45 @@ class __internal__():
         ref_sys = osr.SpatialReference()
         if ref_sys.ImportFromEPSG(int(epsg)) == ogr.OGRERR_NONE:
             poly.AssignSpatialReference(ref_sys)
-        else:
-            msg = "Failed to import EPSG %s for image file %s" % (str(epsg), filename)
-            logging.error(msg)
-            raise RuntimeError(msg)
+            return geometry_to_geojson(poly)
 
-        # Convert the polygon to lat-lon
-        dest_spatial = osr.SpatialReference()
-        if dest_spatial.ImportFromEPSG(int(LAT_LON_EPSG_CODE)) != ogr.OGRERR_NONE:
-            msg = "Failed to import EPSG %s for conversion to lat-lon" % str(LAT_LON_EPSG_CODE)
-            logging.error(msg)
-            raise RuntimeError(msg)
+        logging.error("Failed to import EPSG %s for las file %s", str(epsg), file_path)
+        return None
 
-        transform = osr.CoordinateTransformation(ref_sys, dest_spatial)
-        new_src = poly.Clone()
-        if new_src:
-            new_src.Transform(transform)
-        else:
-            msg = "Failed to transform file polygon to lat-lon" % filename
-            logging.error(msg)
-            raise RuntimeError(msg)
+    @staticmethod
+    def clip_las(las_path: str, clip_tuple: tuple, out_path: str) -> None:
+        """Clip LAS file to polygon.
+        Arguments:
+          las_path: path to point cloud file
+          clip_tuple: tuple containing (minX, maxX, minY, maxY) of clip bounds
+          out_path: output file to write
+        Notes:
+            The clip_tuple is assumed to be in the correct coordinate system for the point cloud file
+        """
+        bounds_str = "([%s, %s], [%s, %s])" % (clip_tuple[0], clip_tuple[1], clip_tuple[2], clip_tuple[3])
 
-        return new_src.Centroid()
+        pdal_dtm = out_path.replace(".las", "_dtm.json")
+        with open(pdal_dtm, 'w') as dtm:
+            dtm_data = """{
+                "pipeline": [
+                    "%s",
+                    {
+                        "type": "filters.crop",
+                        "bounds": "%s"
+                    },
+                    {
+                        "type": "writers.las",
+                        "filename": "%s"
+                    }
+                ]
+            }""" % (las_path, bounds_str, out_path)
+            logging.debug("Writing dtm file contents: %s", str(dtm_data))
+            dtm.write(dtm_data)
+
+        cmd = 'pdal pipeline "%s"' % pdal_dtm
+        logging.debug("Running pipeline command: %s", cmd)
+        subprocess.call([cmd], shell=True)
+        os.remove(pdal_dtm)
 
     @staticmethod
     def get_time_stamps(iso_timestamp: str) -> list:
