@@ -12,25 +12,6 @@ install:
     - "pip install pytest"
     - "pip install pylint"
 
-matrix:
-    include:
-     - name: "Common-Image"
-       env: TRANSFORMER_BRANCH=test-development FOLDER="common-image" USE_COMMON="" TEST_FILE="common_image_test.py"
-     - name: "RGB-plot-base"
-       env: TRANSFORMER_BRANCH=test-development FOLDER="rgb-plot-base-transformer" USE_COMMON="True" TEST_FILE="rgb_image_test.py"
-     - name: "Lidar-plot-base"
-       env: TRANSFORMER_BRANCH=test-development FOLDER="lidar-plot-base-transformer" USE_COMMON="True" TEST_FILE="lidar_image_test.py"
-
-script:
-    # Moving file from the common-image to test-image before building
-     - cp test-image/${TEST_FILE} ${FOLDER}
-    # Building the image and runnning the test within, see test-image folder for documentation there
-     - docker build -t common-image:latest common-image
-     - if [${USE_COMMON} == ""]; python pytest ${TEST_FILE}
-     - if [${USE_COMMON} != ""]; docker build -t ${FOLDER} ${FOLDER} && python pytest ${FOLDER}/${TEST_FILE}
-     - docker run ${FOLDER}
-
-
 after_script:
  - "git clone https://github.com/AgPipeline/Organization-info.git"
     allow_failures:    
