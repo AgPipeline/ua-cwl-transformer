@@ -1,18 +1,16 @@
 services:
  - docker
 
-language:
- - python
+language: python
 
 python:
- - "3.6"
+    - "3.6"
 
-cache:
- - pip
+cache: pip
 
 install:
- - "pip install pytest"
- - "pip install pylint"
+    - "pip install pytest"
+    - "pip install pylint"
 
 matrix:
     include:
