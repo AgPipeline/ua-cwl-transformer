@@ -1,4 +1,4 @@
-FROM agpipeline/base-image:1.0
+FROM agpipeline/base-image:latest
 LABEL maintainer="Jorge Barrios <jorgebarrios@email.arizona.edu>"
 
 # Build environment values
