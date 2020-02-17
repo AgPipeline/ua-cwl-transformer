@@ -4,17 +4,17 @@ services:
 language: python
 
 python:
-  - "3.6"
+ - "3.6"
 
 cache: pip
 
 install:
-    - "pip install pytest"
-    - "pip install pylint"
+ - "pip install pytest"
+ - "pip install pylint"
 
 script:
  - "git clone https://github.com/AgPipeline/Organization-info.git"
-    allow_failures:    
-     - "pylint --rcfile=Organization-info/pylint.rc common-image/*.py"
-     - "pylint --rcfile=Organization-info/pylint.rc rgb-plot-base-transformer/*.py"
-     - "pylint --rcfile=Organization-info/pylint.rc lidar-plot-base-transformer/*.py"
+  allow_failures:    
+   - "pylint --rcfile=Organization-info/pylint.rc common-image/*.py"
+   - "pylint --rcfile=Organization-info/pylint.rc rgb-plot-base-transformer/*.py"
+   - "pylint --rcfile=Organization-info/pylint.rc lidar-plot-base-transformer/*.py"
