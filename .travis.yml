@@ -25,9 +25,9 @@ script:
     # Moving file from the common-image to test-image before building
      - cp test-image/${TEST_FILE} ${FOLDER}
     # Building the image and runnning the test within, see test-image folder for documentation there
-     - docker build -t common-image:latest common-image
-     - if [${USE_COMMON} == ""]; python pytest ${TEST_FILE}
-     - if [${USE_COMMON} != ""]; docker build -t ${FOLDER} ${FOLDER} && python pytest ${FOLDER}/${TEST_FILE}
+    # - docker build -t common-image:latest common-image
+     - if [ ${USE_COMMON} == ""]; python pytest ${TEST_FILE}
+     - if [ ${USE_COMMON} != ""]; docker build -t ${FOLDER} ${FOLDER} && python pytest ${FOLDER}/${TEST_FILE}
      - docker run ${FOLDER}
 
 after_script:
