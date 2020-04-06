@@ -29,3 +29,5 @@ If writing all the data to the same file isn't possible, or not desirable, this 
 
 Note: if using Docker images this path is relative to the code running inside the container.
 
+##  Building Docker Image
+When building the Docker image it may be necessary to use the `--no-cache` flag on the Docker command line to install the needed lidar related files.

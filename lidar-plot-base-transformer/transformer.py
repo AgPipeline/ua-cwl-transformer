@@ -2,27 +2,19 @@
 """
 
 import argparse
-import copy
 import datetime
-import json
-import liblas
 import logging
 import math
-import numpy as np
 import os
-from osgeo import ogr
-import osr
 import random
 import re
-import subprocess
 import time
-from typing import Optional
-import yaml
-
-
+from osgeo import ogr
+import osr
+import liblas
+import laspy
 
 import algorithm_lidar
-import configuration
 import transformer_class
 
 # Number of tries to open a CSV file before we give up
@@ -32,7 +24,7 @@ MAX_CSV_FILE_OPEN_TRIES = 10
 MAX_FILE_OPEN_SLEEP_SEC = 30
 
 # Array of trait names that should have array values associated with them
-TRAIT_NAME_ARRAY_VALUE = ['canopy_cover', 'site']
+TRAIT_NAME_ARRAY_VALUE = ['canopy_height', 'site']
 
 # Mapping of default trait names to fixed values
 TRAIT_NAME_MAP = {
@@ -62,6 +54,8 @@ LAT_LON_EPSG_CODE = 4326
 FILE_NAME_CSV = "lidar_plot.csv"
 FILE_NAME_GEO_CSV = "lidar_plot_geo.csv"
 FILE_NAME_BETYDB_CSV = "lidar_plot_betydb.csv"
+
+SUPPORTED_FILE_EXTENSIONS = ['las', 'laz']
 
 class __internal__():
     """Class containing functions for this file only
@@ -199,13 +193,12 @@ class __internal__():
             Returns a tuple with the name of the algorithm and a dictionary with information on the algorithm
         """
         return (__internal__.get_algorithm_definition_str('ALGORITHM_NAME', 'unknown'),
-               {
+                {
                     'version': __internal__.get_algorithm_definition_str('VERSION', 'x.y'),
                     'traits': __internal__.get_algorithm_definition_str('VARIABLE_NAMES', ''),
                     'units': __internal__.get_algorithm_definition_str('VARIABLE_UNITS', ''),
                     'labels': __internal__.get_algorithm_definition_str('VARIABLE_LABELS', '')
-               })
-
+                })
 
     @staticmethod
     def get_las_epsg_from_header(header: liblas.header.Header) -> str:
@@ -235,19 +228,16 @@ class __internal__():
         return epsg
 
     @staticmethod
-    def get_las_extents(file_path: str, default_epsg: int = None) -> Optional[str]:
-        """Calculate the extent of the given las file and return as GeoJSON.
+    def get_centroid_latlon(file_path: str, default_epsg: int = None):
+        """Returns the centroid of the file geometry
         Arguments:
             file_path: path to the file from which to load the bounds
             default_epsg: the default EPSG to assume if a file has a boundary but not a coordinate system
         Return:
-            Returns the JSON representing the image boundary, or None if the
-            bounds could not be loaded
+            Returns the centroid of the geometry loaded from the file in lat-lon coordinates
         Notes:
-            If a file doesn't have a coordinate system and a default epsg is specified, the
-            return JSON will use the default_epsg.
-            If a file doesn't have a coordinate system and there isn't a default epsg specified, the boundary
-            of the image is not returned (None) and a warning is logged.
+            RuntimeError is raised if the image is not a geo referenced image with an EPSG code,
+            the EPSG code is not supported, or another problems occurs
         """
         # Get the bounds and the EPSG code
         las_info = liblas.file.File(file_path, mode='r')
@@ -258,8 +248,9 @@ class __internal__():
             if default_epsg is not None:
                 epsg = default_epsg
             else:
-                logging.warning("Unable to find EPSG and not default is specified for file '%s'", file_path)
-                return None
+                msg = "Unable to find EPSG and no default is specified for file '%s'" % file_path
+                logging.error(msg)
+                raise RuntimeError(msg)
 
         ring = ogr.Geometry(ogr.wkbLinearRing)
         ring.AddPoint(min_bound[1], min_bound[0])  # Upper left
@@ -274,45 +265,28 @@ class __internal__():
         ref_sys = osr.SpatialReference()
         if ref_sys.ImportFromEPSG(int(epsg)) == ogr.OGRERR_NONE:
             poly.AssignSpatialReference(ref_sys)
-            return geometry_to_geojson(poly)
+        else:
+            msg = "Failed to import EPSG %s for image file %s" % (str(epsg), file_path)
+            logging.error(msg)
+            raise RuntimeError(msg)
 
-        logging.error("Failed to import EPSG %s for las file %s", str(epsg), file_path)
-        return None
+        # Convert the polygon to lat-lon
+        dest_spatial = osr.SpatialReference()
+        if dest_spatial.ImportFromEPSG(int(LAT_LON_EPSG_CODE)) != ogr.OGRERR_NONE:
+            msg = "Failed to import EPSG %s for conversion to lat-lon" % str(LAT_LON_EPSG_CODE)
+            logging.error(msg)
+            raise RuntimeError(msg)
 
-    @staticmethod
-    def clip_las(las_path: str, clip_tuple: tuple, out_path: str) -> None:
-        """Clip LAS file to polygon.
-        Arguments:
-          las_path: path to point cloud file
-          clip_tuple: tuple containing (minX, maxX, minY, maxY) of clip bounds
-          out_path: output file to write
-        Notes:
-            The clip_tuple is assumed to be in the correct coordinate system for the point cloud file
-        """
-        bounds_str = "([%s, %s], [%s, %s])" % (clip_tuple[0], clip_tuple[1], clip_tuple[2], clip_tuple[3])
+        transform = osr.CoordinateTransformation(ref_sys, dest_spatial)
+        new_src = poly.Clone()
+        if new_src:
+            new_src.Transform(transform)
+        else:
+            msg = "Failed to transform file polygon to lat-lon" % file_path
+            logging.error(msg)
+            raise RuntimeError(msg)
 
-        pdal_dtm = out_path.replace(".las", "_dtm.json")
-        with open(pdal_dtm, 'w') as dtm:
-            dtm_data = """{
-                "pipeline": [
-                    "%s",
-                    {
-                        "type": "filters.crop",
-                        "bounds": "%s"
-                    },
-                    {
-                        "type": "writers.las",
-                        "filename": "%s"
-                    }
-                ]
-            }""" % (las_path, bounds_str, out_path)
-            logging.debug("Writing dtm file contents: %s", str(dtm_data))
-            dtm.write(dtm_data)
-
-        cmd = 'pdal pipeline "%s"' % pdal_dtm
-        logging.debug("Running pipeline command: %s", cmd)
-        subprocess.call([cmd], shell=True)
-        os.remove(pdal_dtm)
+        return new_src.Centroid()
 
     @staticmethod
     def get_time_stamps(iso_timestamp: str) -> list:
@@ -321,15 +295,7 @@ class __internal__():
             A list consisting of the date (YYYY-MM-DD) and a local timestamp (YYYY-MM-DDTHH:MM:SS)
         """
         # Strip the offset from the string
-        time_date_sep = iso_timestamp.find('T')
-        time_offset_sep = iso_timestamp.rfind('-')
-        if 0 <= time_date_sep < time_offset_sep:
-            # We have a time offset
-            working_timestamp = iso_timestamp[: time_offset_sep]
-        else:
-            working_timestamp = iso_timestamp
-
-        timestamp = datetime.datetime.strptime(working_timestamp, "%Y-%m-%dT%H:%M:%S")
+        timestamp = datetime.datetime.fromisoformat(iso_timestamp)
 
         return [timestamp.strftime('%Y-%m-%d'), timestamp.strftime('%Y-%m-%dT%H:%M:%S')]
 
@@ -737,97 +703,157 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict, t
     found_image = False
     for one_file in check_md['list_files']():
         ext = os.path.splitext(one_file)[1].strip('.')
-        if ext in transformer.supported_image_file_exts:
+        if ext in SUPPORTED_FILE_EXTENSIONS:
             found_image = True
             break
 
     if not found_image:
-        logging.debug("Image not found in list of files. Supported types are: %s", ", ".join(transformer.supported_image_file_exts))
+        logging.debug("Image not found in list of files. Supported types are: %s", ", ".join(SUPPORTED_FILE_EXTENSIONS))
 
     return (0) if found_image else (-1000, "Unable to find an image in the list of files")
 
 
-def perform_process(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict, full_md: list) -> dict:
+def perform_process(transformer: transformer_class.Transformer, check_md: dict, transformer_md: list, full_md: list) -> dict:
     """Performs the processing of the data
     Arguments:
         transformer: instance of transformer class
-        check_md: metadata associated with this request
-        transformer_md: metadata associated with this transformer
-        full_md: the full set of metadata
+        check_md: request specific metadata
+        transformer_md: metadata associated with previous runs of the transformer
+        full_md: the full set of metadata available to the transformer
     Return:
         Returns a dictionary with the results of processing
     """
     # pylint: disable=unused-argument
-    # loop through the available files and clip data into plot-level files
-    processed_files = 0
-    processed_plots = 0
-    start_timestamp = datetime.datetime.now()
-    file_list = check_md['list_files']()
-    files_to_process = __internal__.get_files_to_process(file_list, transformer.args.sensor, transformer.args.epsg)
-    logging.info("Found %s files to process", str(len(files_to_process)))
+    # The following pylint disables are here because to satisfy them would make the code unreadable
+    # pylint: disable=too-many-statements, too-many-locals, too-many-branches
 
-    # Get all the possible plots
-    datestamp = check_md['timestamp'][0:10]
-    all_plots = get_site_boundaries(datestamp, city='Maricopa')
-    logging.debug("Have %s plots for site", len(all_plots))
+    # Environment checking
+    if not hasattr(algorithm_lidar, 'calculate'):
+        msg = "The 'calculate()' function was not found in algorithm_lidar.py"
+        logging.error(msg)
+        return {'code': -1001, 'error': msg}
 
-    container_md = []
-    for filename in files_to_process:
-        processed_files += 1
-        file_path = files_to_process[filename]['path']
-        file_bounds = files_to_process[filename]['bounds']
-        sensor = files_to_process[filename]['sensor_name']
-        logging.debug("File bounds: %s", str(file_bounds))
+    # Setup local variables
+    variable_names = __internal__.get_algorithm_variable_list('VARIABLE_NAMES')
 
-        overlap_plots = find_plots_intersect_boundingbox(file_bounds, all_plots, fullmac=True)
-        logging.info("Have %s plots intersecting file '%s'", str(len(overlap_plots)), filename)
+    csv_file, geostreams_csv_file, betydb_csv_file = __internal__.get_csv_file_names(
+        __internal__.determine_csv_path([transformer.args.csv_path, check_md['working_folder']]))
+    logging.debug("Calculated default CSV path: %s", csv_file)
+    logging.debug("Calculated geostreams CSV path: %s", geostreams_csv_file)
+    logging.debug("Calculated BETYdb CSV path: %s", betydb_csv_file)
 
-        file_spatial_ref = __internal__.get_spatial_reference_from_json(file_bounds)
-        for plot_name in overlap_plots:
-            processed_plots += 1
-            plot_bounds = convert_json_geometry(overlap_plots[plot_name], file_spatial_ref)
-            logging.debug("Clipping out plot '%s': %s", str(plot_name), str(plot_bounds))
-            if __internal__.calculate_overlap_percent(plot_bounds, file_bounds) < 0.10:
-                logging.info("Skipping plot with too small overlap: %s", plot_name)
+    datestamp, localtime = __internal__.get_time_stamps(check_md['timestamp'])
+    cultivar = transformer.args.germplasm_name
+
+    write_geostreams_csv = transformer.args.geostreams_csv or __internal__.get_algorithm_definition_bool('WRITE_GEOSTREAMS_CSV', True)
+    write_betydb_csv = transformer.args.betydb_csv or __internal__.get_algorithm_definition_bool('WRITE_BETYDB_CSV', True)
+    logging.info("Writing geostreams csv file: %s", "True" if write_geostreams_csv else "False")
+    logging.info("Writing BETYdb csv file: %s", "True" if write_betydb_csv else "False")
+
+    # Get default values and adjust as needed
+    (csv_fields, csv_traits) = __internal__.get_csv_traits_table(variable_names)
+    csv_traits['germplasmName'] = cultivar
+    (geo_fields, geo_traits) = __internal__.get_geo_traits_table()
+    (bety_fields, bety_traits) = __internal__.get_bety_traits_table(variable_names)
+    bety_traits['species'] = cultivar
+
+    csv_header = ','.join(map(str, __internal__.get_csv_header_fields()))
+    geo_csv_header = ','.join(map(str, geo_fields))
+    bety_csv_header = ','.join(map(str, bety_fields))
+
+    # Process the image files
+    num_image_files = 0
+    entries_written = 0
+    for one_file in __internal__.filter_file_list_by_ext(check_md['list_files'](), SUPPORTED_FILE_EXTENSIONS):
+
+        plot_name = None
+        try:
+            num_image_files += 1
+
+            # Setup
+            plot_name = __internal__.find_metadata_value(full_md, ['sitename'])
+            centroid = __internal__.get_centroid_latlon(one_file)
+            lidar_file = laspy.file.File(one_file, mode='r')
+            lidar_points = lidar_file.points
+
+            # Make the call and check the results
+            calc_value = algorithm_lidar.calculate(lidar_points)
+            logging.debug("Calculated value is %s for file: %s", str(calc_value), one_file)
+            if calc_value is None:
                 continue
-            tuples = geojson_to_tuples_betydb(yaml.safe_load(plot_bounds))
 
-            plot_md = __internal__.cleanup_request_md(check_md)
-            plot_md['plot_name'] = plot_name
+            values = __internal__.validate_calc_value(calc_value, variable_names)
+            logging.debug("Verified values are %s", str(values))
 
-            if filename.endswith('.tif'):
-                # If file is a geoTIFF, simply clip it
-                out_path = os.path.join(check_md['working_folder'], plot_name)
-                out_file = os.path.join(out_path, filename)
-                if not os.path.exists(out_path):
-                    os.makedirs(out_path)
+            geo_traits['site'] = plot_name
+            geo_traits['lat'] = str(centroid.GetY())
+            geo_traits['lon'] = str(centroid.GetX())
+            geo_traits['dp_time'] = localtime
+            geo_traits['source'] = one_file
+            geo_traits['timestamp'] = datestamp
 
-                clip_raster(file_path, tuples, out_path=out_file, compress=True)
+            # Write the data points geographically and otherwise
+            for idx, trait_name in enumerate(variable_names):
+                # Geostreams can only handle one field at a time so we write out one row per field/value pair
+                geo_traits['trait'] = trait_name
+                geo_traits['value'] = str(values[idx])
+                if write_geostreams_csv:
+                    __internal__.write_trait_csv(geostreams_csv_file, geo_csv_header, geo_fields, geo_traits)
 
-                cur_md = __internal__.prepare_container_md(plot_name, plot_md, sensor, file_path, [out_file])
-                container_md = __internal__.merge_container_md(container_md, cur_md)
+                # csv and BETYdb can handle wide rows with multiple values so we just set the field
+                # values here and write the single row after the loop
+                csv_traits[variable_names[idx]] = str(values[idx])
+                bety_traits[variable_names[idx]] = str(values[idx])
 
-            elif filename.endswith('.las'):
-                out_path = os.path.join(check_md['working_folder'], plot_name)
-                out_file = os.path.join(out_path, filename)
-                if not os.path.exists(out_path):
-                    os.makedirs(out_path)
+            csv_traits['site'] = plot_name
+            csv_traits['timestamp'] = datestamp
+            csv_traits['lat'] = str(centroid.GetY())
+            csv_traits['lon'] = str(centroid.GetX())
+            __internal__.write_trait_csv(csv_file, csv_header, csv_fields, csv_traits)
 
-                __internal__.clip_las(file_path, tuples, out_path=out_file)
+            bety_traits['site'] = plot_name
+            bety_traits['local_datetime'] = localtime
+            if write_betydb_csv:
+                __internal__.write_trait_csv(betydb_csv_file, bety_csv_header, bety_fields, bety_traits)
 
-                cur_md = __internal__.prepare_container_md(plot_name, plot_md, sensor, file_path, [out_file])
-                container_md = __internal__.merge_container_md(container_md, cur_md)
+            entries_written += 1
 
-    return {
-        'code': 0,
-        'container': container_md,
-        configuration.TRANSFORMER_NAME:
-        {
-            'utc_timestamp': datetime.datetime.utcnow().isoformat(),
-            'processing_time': str(datetime.datetime.now() - start_timestamp),
-            'total_file_count': len(file_list),
-            'processed_file_count': processed_files,
-            'total_plots_processed': processed_plots,
-            'sensor': transformer.args.sensor
-        }
-    }
+        except Exception:
+            logging.exception("Error generating %s for %s", __internal__.get_algorithm_name(), str(plot_name))
+            continue
+
+    if num_image_files == 0:
+        logging.warning("No lidar were detected for processing")
+    if entries_written == 0:
+        logging.warning("No entries were written to CSV files")
+
+    # Prepare the return information
+    algorithm_name, algorithm_md = __internal__.prepare_algorithm_metadata()
+    algorithm_md['files_processed'] = str(num_image_files)
+    algorithm_md['lines_written'] = str(entries_written)
+    if write_geostreams_csv:
+        algorithm_md['wrote_geostreams'] = "Yes"
+    if write_betydb_csv:
+        algorithm_md['wrote_betydb'] = "Yes"
+
+    file_md = []
+    if entries_written:
+        file_md.append({
+            'path': csv_file,
+            'key': 'csv'
+        })
+        if write_geostreams_csv:
+            file_md.append({
+                'path': geostreams_csv_file,
+                'key': 'csv'
+            })
+        if write_betydb_csv:
+            file_md.append({
+                'path': betydb_csv_file,
+                'key': 'csv'
+            })
+
+    return {'code': 0,
+            'file': file_md,
+            algorithm_name: algorithm_md
+            }
